@@ -3,9 +3,9 @@
 
 var commander = require('commander');
 var esbuild = require('esbuild');
-var chalk = require('chalk');
 var path = require('path');
 var fs = require('fs');
+var chalk = require('chalk');
 var firstOpenPort = require('first-open-port');
 var ws = require('ws');
 var http = require('http');
@@ -19,6 +19,119 @@ var firstOpenPort__default = /*#__PURE__*/_interopDefaultLegacy(firstOpenPort);
 
 var name = "bbplugin-scripts";
 var version = "0.0.0";
+
+const metaPath = path.resolve(process.cwd(), 'plugin.json');
+
+let _pluginData;
+
+function getPluginMeta() {
+  if (_pluginData) return _pluginData;
+  let has_failed = false;
+
+  function _assert(condition, message) {
+    if (!condition) {
+      console.log(message);
+      has_failed = true;
+    }
+  }
+
+  if (fs.existsSync(metaPath)) {
+    let pluginData;
+
+    try {
+      pluginData = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
+    } catch (e) {
+      console.log(chalk__default["default"].red(`Failed to parse 'plugin.json' at '${metaPath}'`));
+      process.exit(0);
+    }
+
+    _assert(typeof pluginData.name === 'string', "Expected field 'name' in 'plugin.json' to be a string");
+
+    _assert(typeof pluginData.version === 'string', "Expected field 'version' in 'plugin.json' to be a string");
+
+    _assert(typeof pluginData.min_version === 'string', "Expected field 'min_version' in 'plugin.json' to be a string");
+
+    _assert(typeof pluginData.description === 'string', "Expected field 'description' in 'plugin.json' to be a string");
+
+    _assert(Array.isArray(pluginData.tags) && pluginData.tags.length < 4, "Expected field 'tags' in 'plugin.json' to be a tuple of 0-3 strings");
+
+    _assert(typeof pluginData.icon === 'string', "Expected field 'icon' in 'plugin.json' to be a string");
+
+    _assert(['both', 'web', 'desktop', undefined].includes(pluginData.variant), "Expected field 'variant' in 'plugin.json' to be any of 'desktop','web','both' or absent");
+
+    _assert(typeof pluginData.id === 'string' && !/[^a-z_]/.test(pluginData.id), "Expected field 'id' in 'plugin.json' to be a string containing only '_' and 'a' through 'z'");
+
+    if (has_failed) process.exit(1);
+    _pluginData = pluginData;
+    return pluginData;
+  } else {
+    console.log(chalk__default["default"].red(`Expected 'plugin.json' at '${metaPath}'`));
+    process.exit(0);
+  }
+} // {
+//   "title": "Block Splitter",
+//   "author": "FetchBot",
+//   "description": "desc",
+//   "about": "we are fucked",
+//   "tags": [],
+//   "icon": "fa-forward",
+//   "version": "0.0.1",
+//   "min_version": "4.0.0",
+//   "variant": "desktop",
+//   "id": "block_splitter"
+// }
+
+// declare const firstOpenPort: (min: number, max?: number) => Promise<number>;
+async function prodBundler() {
+  // let _port!: number;
+  // let _devPluginCode: string;
+  // let _devPluginClientFilePath = resolve(process.cwd(), '.plugin-scripts', 'backend', 'plugin.js');
+  let _devPluginOutputFilePath = path.resolve(process.cwd(), 'plugins', getPluginMeta().id); // let pluginBundle: string;
+
+
+  const meta = getPluginMeta(); // let update = () => {};
+
+  function bundlePlugin() {
+    console.log('Buildig Plugin...');
+    return esbuild__default["default"].build({
+      entryPoints: [path.resolve(process.cwd(), 'src', getPluginMeta().id + '.ts')],
+      // write: false,
+      bundle: true,
+      outfile: path.resolve(process.cwd(), 'plugins', meta.id + '.js'),
+      format: 'iife',
+      watch: false,
+      minify: true // sourcemap: 'inline',
+      // plugins: [
+      //   {
+      //     name: 'build watcher',
+      //     setup(build) {
+      //       build.onStart(() => {
+      //         console.log('starting build...');
+      //       });
+      //       build.onEnd((res) => {
+      //         console.log('done build');
+      //         const file = res.outputFiles?.find((file) => {
+      //           return file.path.endsWith(meta.id + '.js');
+      //         });
+      //         if (!file) {
+      //           throw new Error('Failed to find plugin build');
+      //         }
+      //         pluginBundle = Buffer.from(file?.contents).toString('utf-8');
+      //         update();
+      //       });
+      //     },
+      //   },
+      // ],
+
+    });
+  } // mkdirSync(dirname(_devPluginClientFilePath), { recursive: true });
+
+
+  fs.mkdirSync(path.dirname(_devPluginOutputFilePath), {
+    recursive: true
+  });
+  bundlePlugin();
+}
 
 const segments = [{
   duration: 60 * 60 * 1000,
@@ -124,67 +237,6 @@ async function taskRunner(...tasks) {
   process.stdout.cursorTo(0, 0);
   process.stdout.clearScreenDown();
 }
-
-const metaPath = path.resolve(process.cwd(), 'plugin.json');
-
-let _pluginData;
-
-function getPluginMeta() {
-  if (_pluginData) return _pluginData;
-  let has_failed = false;
-
-  function _assert(condition, message) {
-    if (!condition) {
-      console.log(message);
-      has_failed = true;
-    }
-  }
-
-  if (fs.existsSync(metaPath)) {
-    let pluginData;
-
-    try {
-      pluginData = JSON.parse(fs.readFileSync(metaPath, 'utf8'));
-    } catch (e) {
-      console.log(chalk__default["default"].red(`Failed to parse 'plugin.json' at '${metaPath}'`));
-      process.exit(0);
-    }
-
-    _assert(typeof pluginData.name === 'string', "Expected field 'name' in 'plugin.json' to be a string");
-
-    _assert(typeof pluginData.version === 'string', "Expected field 'version' in 'plugin.json' to be a string");
-
-    _assert(typeof pluginData.min_version === 'string', "Expected field 'min_version' in 'plugin.json' to be a string");
-
-    _assert(typeof pluginData.description === 'string', "Expected field 'description' in 'plugin.json' to be a string");
-
-    _assert(Array.isArray(pluginData.tags) && pluginData.tags.length < 4, "Expected field 'tags' in 'plugin.json' to be a tuple of 0-3 strings");
-
-    _assert(typeof pluginData.icon === 'string', "Expected field 'icon' in 'plugin.json' to be a string");
-
-    _assert(['both', 'web', 'desktop', undefined].includes(pluginData.variant), "Expected field 'variant' in 'plugin.json' to be any of 'desktop','web','both' or absent");
-
-    _assert(typeof pluginData.id === 'string' && !/[^a-z_]/.test(pluginData.id), "Expected field 'id' in 'plugin.json' to be a string containing only '_' and 'a' through 'z'");
-
-    if (has_failed) process.exit(1);
-    _pluginData = pluginData;
-    return pluginData;
-  } else {
-    console.log(chalk__default["default"].red(`Expected 'plugin.json' at '${metaPath}'`));
-    process.exit(0);
-  }
-} // {
-//   "title": "Block Splitter",
-//   "author": "FetchBot",
-//   "description": "desc",
-//   "about": "we are fucked",
-//   "tags": [],
-//   "icon": "fa-forward",
-//   "version": "0.0.1",
-//   "min_version": "4.0.0",
-//   "variant": "desktop",
-//   "id": "block_splitter"
-// }
 
 let packetTypes;
 
@@ -352,5 +404,8 @@ program.name(name);
 program.version(version);
 program.command('dev').description('start the development bundler for this project').action(() => {
   devBundler();
+});
+program.command('build').description('build a production version of your plugin').action(() => {
+  prodBundler();
 });
 program.parse();
