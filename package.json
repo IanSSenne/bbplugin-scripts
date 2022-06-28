@@ -10,6 +10,7 @@
     "bin"
   ],
   "scripts": {
+    "build:dev-plugin": "rollup -c dev-plugin.rollup.config.js --watch",
     "build": "rollup -c",
     "watch": "rollup -c --watch"
   },
@@ -23,7 +24,10 @@
     "@rollup/plugin-babel": "^5.3.1",
     "@rollup/plugin-json": "^4.1.0",
     "@rollup/plugin-node-resolve": "^13.3.0",
+    "@types/commander": "^2.12.2",
     "@types/inquirer": "^8.2.1",
+    "@types/node": "^18.0.0",
+    "@types/ws": "^8.5.3",
     "@typescript-eslint/eslint-plugin": "^5.26.0",
     "@typescript-eslint/parser": "^5.26.0",
     "eslint": "^8.16.0",
@@ -36,6 +40,11 @@
   "dependencies": {
     "chalk": "^4.1.2",
     "commander": "^9.3.0",
-    "inquirer": "^8.2.4"
+    "esbuild": "^0.14.47",
+    "first-open-port": "^0.1.2",
+    "fs": "^0.0.1-security",
+    "inquirer": "^8.2.4",
+    "path": "^0.12.7",
+    "ws": "^8.8.0"
   }
 }
